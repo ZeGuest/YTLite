@@ -14,7 +14,7 @@ on:
         description: "Integrate YTUHD"
         type: boolean
         required: true
-        default: true
+        default: false
 
       enable_ryd:
         description: "Integrate Return YouTube Dislikes"
@@ -33,6 +33,12 @@ on:
         type: boolean
         required: true
         default: true
+        
+      enable_ytab:
+        description: "Integrate YTABConfig"
+        type: boolean
+        required: true
+        default: true
 
       ipa_url:
         description: "URL to the decrypted IPA file"
@@ -43,6 +49,12 @@ on:
       tweak_version:
         description: "The version of the tweak to use. Enter the version manually from dayanch96/YTLite/releases or leave default"
         default: "5.1"
+        required: true
+        type: string
+
+      yt_version:
+        description: "The version of the YouTube used."
+        default: ""
         required: true
         type: string
 
@@ -222,6 +234,12 @@ jobs:
           cd ${{ github.workspace }}
           git clone --quiet --depth=1 --recurse-submodules https://github.com/therealFoxster/DontEatMyContent.git
 
+      - name: Clone YTABConfig
+        if: ${{ inputs.enable_ytab }}
+        run: |
+          cd ${{ github.workspace }}
+          git clone --quiet --depth=1 https://github.com/PoomSmart/YTABConfig.git
+
       - name: Build YouPiP
         if: ${{ inputs.enable_youpip }}
         run: |
@@ -285,23 +303,32 @@ jobs:
         env:
           THEOS: ${{ github.workspace }}/theos
 
+	  - name: Build YTABConfig
+		if: ${{ inputs.enable_ytab }}
+        run: |
+          cd ${{ github.workspace }}/YTABConfig
+          make clean package DEBUG=0 FINALPACKAGE=1
+          mv packages/*.deb ${{ github.workspace }}/ytab.deb
+        env:
+          THEOS: ${{ github.workspace }}/theos
+
       - name: Inject tweaks into IPA
         run: |
           tweaks="ytplus.deb OpenYoutubeSafariExtension.appex"
 
-          for deb in youpip.deb ytuhd.deb ryd.deb ygs.deb yq.deb ytvo.deb demc.deb; do
+          for deb in youpip.deb ytuhd.deb ryd.deb ygs.deb yq.deb ytvo.deb demc.deb ytab.deb; do
             if [ -f "$deb" ]; then
               tweaks="$tweaks $deb"
             fi
           done
 
-          cyan -i youtube.ipa -o YouTubePlus_${{ inputs.tweak_version }}.ipa -uwef $tweaks -n "${{ inputs.display_name }}" -b ${{ inputs.bundle_id }}
+          cyan -i youtube.ipa -o YouTubePlus_${{ inputs.yt_version }}_${{ inputs.tweak_version }}.ipa -uwef $tweaks -n "${{ inputs.display_name }}" -b ${{ inputs.bundle_id }}
 
       - name: Upload to GitHub Releases
         uses: softprops/action-gh-release@v2.0.1
         with:
           name: YouTubePlus v${{ inputs.tweak_version }} (${{ github.run_number }})
-          files: YouTubePlus_${{ inputs.tweak_version }}.ipa
+          files: YouTubePlus_${{ inputs.yt_version }}_${{ inputs.tweak_version }}.ipa
           draft: true
 
       - name: Output Release URL
