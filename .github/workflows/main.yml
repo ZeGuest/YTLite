@@ -35,7 +35,7 @@ on:
         default: false
 
       enable_ytab:
-        description: "Integrade YTABConfig"
+        description: "Integrate YTABConfig"
         type: boolean
         required: true
         default: false
