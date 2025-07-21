@@ -34,6 +34,12 @@ on:
         required: true
         default: false
 
+      enable_ytab:
+        description: "Integrade YTABConfig"
+        type: boolean
+        required: true
+        default: false
+
       ipa_url:
         description: "URL to the decrypted IPA file"
         default: ""
@@ -222,6 +228,12 @@ jobs:
           cd ${{ github.workspace }}
           git clone --quiet --depth=1 --recurse-submodules https://github.com/therealFoxster/DontEatMyContent.git
 
+      - name: Clone YTABConfig
+        if: ${{ inputs.enable_ytab }}
+        run: |
+          cd ${{ github.workspace }}
+          git clone --quiet --depth=1 --recurse-submodules https://github.com/PoomSmart/YTABConfig.git
+
       - name: Build YouPiP
         if: ${{ inputs.enable_youpip }}
         run: |
@@ -285,11 +297,18 @@ jobs:
         env:
           THEOS: ${{ github.workspace }}/theos
 
+      - name: Build YTABConfig
+        if: ${{ inputs.enable_ytab }}
+        run: |
+          cd ${{ github.workspace }}/YTABConfig
+          make clean package DEBUG=0 FINALPACKAGE=1
+          mv packages/*.deb ${{ github.workspace}}/ytab.deb
+
       - name: Inject tweaks into IPA
         run: |
           tweaks="ytplus.deb OpenYoutubeSafariExtension.appex"
 
-          for deb in youpip.deb ytuhd.deb ryd.deb ygs.deb yq.deb ytvo.deb demc.deb; do
+          for deb in youpip.deb ytuhd.deb ryd.deb ygs.deb yq.deb ytvo.deb demc.deb ytab.deb; do
             if [ -f "$deb" ]; then
               tweaks="$tweaks $deb"
             fi
