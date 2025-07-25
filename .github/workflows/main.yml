@@ -35,7 +35,7 @@ on:
         default: false
 
       enable_ytab:
-        description: "Integrade YTABConfig"
+        description: "Integrate YTABConfig"
         type: boolean
         required: true
         default: false
@@ -301,7 +301,9 @@ jobs:
         run: |
           cd ${{ github.workspace }}/YTABConfig
           make clean package DEBUG=0 FINALPACKAGE=1
-          mv packages/*.deb ${{ github.workspace}}/ytab.deb
+          mv packages/*.deb ${{ github.workspace }}/ytab.deb
+        env:
+          THEOS: ${{ github.workspace }}/theos
 
       - name: Inject tweaks into IPA
         run: |
