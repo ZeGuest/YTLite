@@ -8,31 +8,31 @@ on:
         description: "Integrate YouPiP"
         type: boolean
         required: true
-        default: false
+        default: true
 
       enable_ytuhd:
         description: "Integrate YTUHD"
         type: boolean
         required: true
-        default: false
+        default: true
 
       enable_yq:
         description: "Integrate YouQuality"
         type: boolean
         required: true
-        default: false
+        default: true
 
       enable_ryd:
         description: "Integrate Return YouTube Dislikes"
         type: boolean
         required: true
-        default: false
+        default: true
 
-      enable_demc:
-        description: "Integrate DontEatMyContent"
+      enable_ytweaks:
+        description: "Integrate YTweaks"
         type: boolean
         required: true
-        default: false
+        default: true
 
       enable_ytab:
         description: "Integrate YTABConfig"
@@ -85,7 +85,7 @@ jobs:
       - name: Hide sensitive inputs
         uses: levibostian/action-hide-sensitive-inputs@v1
         with:
-          exclude_inputs: bundle_id,display_name,enable_demc,enable_ryd,enable_youpip,enable_yq,enable_ytuhd,info_note,tweak_version
+          exclude_inputs: bundle_id,display_name,enable_ryd,enable_youpip,enable_yq,enable_ytuhd,info_note,tweak_version,enable_ytweaks
 
       - name: Download and validate IPA
         run: |
@@ -105,7 +105,7 @@ jobs:
         run: echo "$(brew --prefix make)/libexec/gnubin" >> $GITHUB_PATH
 
       - name: Cache Theos
-        if: ${{ inputs.enable_youpip || inputs.enable_ytuhd || inputs.enable_yq || inputs.enable_ryd || inputs.enable_demc || inputs.enable_ytab}}
+        if: ${{ inputs.enable_youpip || inputs.enable_ytuhd || inputs.enable_yq || inputs.enable_ryd || inputs.enable_ytab || inputs.enable_ytweaks}}
         id: theos
         uses: actions/cache@v4
         env:
@@ -116,7 +116,7 @@ jobs:
           restore-keys: ${{ env.cache-name }}
 
       - name: Setup Theos
-        if: ${{ (inputs.enable_youpip || inputs.enable_ytuhd || inputs.enable_yq || inputs.enable_ryd || inputs.enable_demc || inputs.enable_ytab) && steps.theos.outputs.cache-hit != 'true' }}
+        if: ${{ (inputs.enable_youpip || inputs.enable_ytuhd || inputs.enable_yq || inputs.enable_ryd || inputs.enable_ytab || inputs.enable_ytweaks) && steps.theos.outputs.cache-hit != 'true' }}
         uses: actions/checkout@v4.1.7
         with:
           repository: theos/theos
@@ -125,7 +125,7 @@ jobs:
           submodules: recursive
 
       - name: Download iOS SDK
-        if: ${{ (inputs.enable_youpip || inputs.enable_ytuhd || inputs.enable_yq || inputs.enable_ryd || inputs.enable_demc || inputs.enable_ytab) && steps.theos.outputs.cache-hit != 'true' }}
+        if: ${{ (inputs.enable_youpip || inputs.enable_ytuhd || inputs.enable_yq || inputs.enable_ryd || inputs.enable_ytab || inputs.enable_ytweaks) && steps.theos.outputs.cache-hit != 'true' }}
         run: |
           git clone --quiet -n --depth=1 --filter=tree:0 https://github.com/theos/sdks/
           cd sdks
@@ -153,7 +153,7 @@ jobs:
           mv *.appex ${{ github.workspace }}
 
       - name: Clone YouTubeHeader
-        if: ${{ inputs.enable_youpip || inputs.enable_ytuhd || inputs.enable_yq || inputs.enable_ryd || inputs.enable_demc }}
+        if: ${{ inputs.enable_youpip || inputs.enable_ytuhd || inputs.enable_yq || inputs.enable_ryd }}
         run: |
           if [ -d "$THEOS/include/YouTubeHeader" ]; then
             echo "YouTubeHeader exists. Pulling latest changes..."
@@ -165,16 +165,11 @@ jobs:
             git clone --quiet --depth=1 https://github.com/PoomSmart/YouTubeHeader.git
           fi
 
-          if [ "${{ inputs.enable_demc }}" = "true" ]; then
-            echo "Copying YouTubeHeader to YTHeaders..."
-            rm -rf "$THEOS/include/YTHeaders"
-            cp -r "$THEOS/include/YouTubeHeader" "$THEOS/include/YTHeaders"
-          fi
         env:
           THEOS: ${{ github.workspace }}/theos
 
       - name: Clone PSHeader
-        if: ${{ inputs.enable_youpip || inputs.enable_ytuhd || inputs.enable_yq || inputs.enable_ryd || inputs.enable_demc }}
+        if: ${{ inputs.enable_youpip || inputs.enable_ytuhd || inputs.enable_yq || inputs.enable_ryd}}
         run: |
           if [ -d "$THEOS/include/PSHeader" ]; then
             echo "PSHeader exists. Pulling latest changes..."
@@ -205,12 +200,6 @@ jobs:
         run: |
           cd ${{ github.workspace }}
           git clone --quiet --depth=1 https://github.com/PoomSmart/Return-YouTube-Dislikes.git
- 
-      - name: Clone YouGroupSettings
-        if: ${{ inputs.enable_demc }}
-        run: |
-          cd ${{ github.workspace }}
-          git clone --quiet --depth=1 https://github.com/PoomSmart/YouGroupSettings.git
 
       - name: Clone YouQuality
         if: ${{ inputs.enable_yq }}
@@ -224,11 +213,11 @@ jobs:
           cd ${{ github.workspace }}
           git clone --quiet --depth=1 https://github.com/PoomSmart/YTVideoOverlay.git
 
-      - name: Clone DontEatMyContent
-        if: ${{ inputs.enable_demc }}
+      - name: Clone YTweaks
+        if: ${{ inputs.enable_ytweaks }}
         run: |
           cd ${{ github.workspace }}
-          git clone --quiet --depth=1 --recurse-submodules https://github.com/therealFoxster/DontEatMyContent.git
+          git clone --quiet --depth=1 --recurse-submodules https://github.com/fosterbarnes/YTweaks.git
 
       - name: Clone YTABConfig
         if: ${{ inputs.enable_ytab }}
@@ -263,15 +252,6 @@ jobs:
         env:
           THEOS: ${{ github.workspace }}/theos
 
-      - name: Build YouGroupSettings
-        if: ${{ inputs.enable_demc }}
-        run: |
-          cd ${{ github.workspace }}/YouGroupSettings
-          make clean package DEBUG=0 FINALPACKAGE=1
-          mv packages/*.deb ${{ github.workspace }}/ygs.deb
-        env:
-          THEOS: ${{ github.workspace }}/theos
-
       - name: Build YouQuality
         if: ${{ inputs.enable_yq }}
         run: |
@@ -290,12 +270,12 @@ jobs:
         env:
           THEOS: ${{ github.workspace }}/theos
 
-      - name: Build DontEatMyContent
-        if: ${{ inputs.enable_demc }}
+      - name: Build YTweaks
+        if: ${{ inputs.enable_ytweaks }}
         run: |
-          cd ${{ github.workspace }}/DontEatMyContent
+          cd ${{ github.workspace }}/YTweaks
           make clean package DEBUG=0 FINALPACKAGE=1
-          mv packages/*.deb ${{ github.workspace }}/demc.deb
+          mv packages/*.deb ${{ github.workspace }}/ytweaks.deb
         env:
           THEOS: ${{ github.workspace }}/theos
 
