@@ -161,6 +161,10 @@ jobs:
         if: ${{ inputs.enable_demc }}
         run: git clone --quiet --depth=1 https://github.com/therealFoxster/DontEatMyContent.git
 
+      - name: Clone YTweaks
+        if: ${{ inputs.enable_ytweaks }}
+        run: git clone --quiet --depth=1 https://github.com/fosterbarnes/YTweaks.git
+
       - name: Build YouPiP
         if: ${{ inputs.enable_youpip }}
         run: |
@@ -208,6 +212,12 @@ jobs:
         run: |
           cd DontEatMyContent && make clean package DEBUG=0 FINALPACKAGE=1
           mv packages/*.deb ../demc.deb
+
+      - name: Build YTweaks
+        if: ${{ inputs.enable_ytweaks }}
+        run: |
+          cd YTweaks && make clean package DEBUG=0 FINALPACKAGE=1
+          mv packages/*.deb ../ytweaks.deb
 
       - name: Clone Open in YouTube (Safari extension)
         run: |
